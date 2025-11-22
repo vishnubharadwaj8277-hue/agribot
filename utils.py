@@ -129,7 +129,7 @@ def language_toggle():
     lang_options = ["English", "Kannada"]
     current_index = 1 if st.session_state.lang == "Kannada" else 0
     new_lang = st.selectbox(
-        label="Language / ಭಾಷಾ", 
+        label="Language / ಕನ್ನಡ", 
         options=lang_options,
         index=current_index, 
         key="lang_select_sidebar"
