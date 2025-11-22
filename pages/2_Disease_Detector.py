@@ -37,6 +37,7 @@ def load_model():
     if not os.path.exists(model_path):
         st.error(f"Model file not found at {model_path}.")
         return None
+    # The model is loaded with custom objects that might be needed for its structure
     custom_objects = {"mse": tf.keras.losses.MeanSquaredError()}
     return tf.keras.models.load_model(model_path, custom_objects=custom_objects)
 
@@ -44,7 +45,7 @@ model = load_model()
 class_labels = {0: "Brown Spot", 1: "Healthy Plant", 2: "Leaf Blast", 3: "Sheath Blight"}
 
 # ========================================
-# CROP VALIDATION FUNCTION (This is what you asked for)
+# CROP VALIDATION FUNCTION
 # ========================================
 
 def is_crop_image(img):
@@ -160,17 +161,22 @@ def preprocess_image(img):
 def predict_image(model, img):
     try:
         img_array = preprocess_image(img)
-        # The model is still expected to return two outputs based on load_model
-        # predictions[0] is for the disease class, predictions[1] is for severity (which we will discard)
+        # The model is designed to return two outputs: [class_probs, severity_output]
         predictions = model.predict(img_array)
         class_probs = predictions[0]
+        severity_output = predictions[1] # Keep this line to handle the model's output structure
         disease_idx = np.argmax(class_probs)
         disease = class_labels.get(disease_idx, "Unknown")
-        # The scale/severity is now discarded. We return a placeholder (None or 0.0)
-        return disease, None # Removed scale
+        # Severity scale calculation is kept but the return value will be ignored by the caller
+        scale = float(severity_output[0][0])
+        if disease == "Healthy Plant": 
+            scale = 0.0
+        # We still return both disease and scale, as the calling function needs to unpack two values.
+        # The display part of the app will simply ignore 'scale'.
+        return disease, round(scale, 2)
     except Exception as e:
         st.error(f"Prediction error: {e}")
-        return "Unknown", None # Removed scale
+        return "Unknown", 0.0
 
 weather_data = get_weather("Bangalore")
 if weather_data:
@@ -214,31 +220,39 @@ if uploaded_file and model:
             )
         else:
             # IS A CROP - Proceed with prediction
-            # Note: predict_image no longer returns scale/severity
             with st.spinner(t("Analyzing...", lang)):
-                disease, _ = predict_image(model, img) # Changed to disease, _
+                disease, scale = predict_image(model, img) # Keep both variables for unpacking
 
-            # Changed to one column layout since severity is removed
-            # col1, col2 = st.columns(2) # Removed
-            
-            # Start of the display logic (Now centered without two columns)
-            
-            bg_color = "#2e7d32, #4caf50" if disease == "Healthy Plant" else "#e65100, #ff8a65"
-            st.markdown(f"""
-            <div style="background: linear-gradient(135deg, {bg_color}); color:white; padding:25px; 
-                 border-radius:20px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.4); 
-                 margin:10px 0 20px 0; height: 180px;">
-                <h3 style="margin:0; color:white; font-size:1.8rem;">
-                    {t('Disease Detected', lang)}
-                </h3>
-                <p style="font-size:32px; font-weight:700; margin:15px 0; color:white;">
-                    {t(disease, lang)}
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
+            col1, col2 = st.columns(2)
+            with col1:
+                bg_color = "#2e7d32, #4caf50" if disease == "Healthy Plant" else "#e65100, #ff8a65"
+                st.markdown(f"""
+                <div style="background: linear-gradient(135deg, {bg_color}); color:white; padding:25px; 
+                     border-radius:20px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.4); 
+                     margin:10px; height: 180px;">
+                    <h3 style="margin:0; color:white; font-size:1.8rem;">
+                        {t('Disease Detected', lang)}
+                    </h3>
+                    <p style="font-size:32px; font-weight:700; margin:15px 0; color:white;">
+                        {t(disease, lang)}
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
 
-            # The second column containing Severity Level is completely removed
-
+            with col2:
+                # This column is intentionally left blank or can have a placeholder
+                # to maintain the layout spacing, but the severity display is removed.
+                st.markdown(f"""
+                <div style="padding:25px; margin:10px; height: 180px;">
+                    <h3 style="margin:0; font-size:1.8rem;">
+                        
+                    </h3>
+                    <p style="font-size:32px; font-weight:700; margin:15px 0;">
+                        
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
+            
             st.markdown(f"### {t('Treatment & Prevention', lang)}")
             
             if disease == "Healthy Plant":
