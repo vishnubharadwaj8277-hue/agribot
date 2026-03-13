@@ -13,9 +13,3 @@ pillow>=10.0.0
 streamlit-modal
 streamlit-float
 Pyrebase4
-
-# --- ML & Image Libraries (Final Deployment Fix) ---
-protobuf==3.20.3
-tensorflow==2.16.1
-numpy==1.26.4
-opencv-python-headless==4.8.1.78

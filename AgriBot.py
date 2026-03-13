@@ -48,24 +48,12 @@ RETRIES = int(os.getenv("API_RETRIES", 2))
 client = Groq(api_key=GROQ_KEY)
 r = sr.Recognizer()
 
-# -----------------------------
-# Firebase session data
-# -----------------------------
-db = st.session_state.db
-auth = st.session_state.auth
-user_id = st.session_state.user_id
-user_token = st.session_state.user['idToken']
 
 # -----------------------------
-# Load Chat History from Firebase
+# Local session data
 # -----------------------------
 if "messages" not in st.session_state:
-    try:
-        chat_history = db.child("user_chats").child(user_id).get(token=user_token).val()
-        st.session_state.messages = chat_history if chat_history else []
-    except Exception as e:
-        print(f"Error loading chat history: {e}")
-        st.session_state.messages = []
+    st.session_state.messages = []
 
 if "last_audio_hash" not in st.session_state:
     st.session_state.last_audio_hash = None
@@ -191,15 +179,8 @@ if user_input:
                 if audio_bytes:
                     st.session_state.audio_bytes_for_message[assistant_msg_key] = audio_bytes
 
-            try:
-                db.child("user_chats").child(user_id).set(st.session_state.messages, token=user_token)
-            except Exception:
-                try:
-                    st.session_state.user = auth.refresh(st.session_state.user['refreshToken'])
-                    user_token = st.session_state.user['idToken']
-                    db.child("user_chats").child(user_id).set(st.session_state.messages, token=user_token)
-                except Exception as refresh_e:
-                    st.error(f"Error saving chat. Please log out and log back in. {refresh_e}")
+                # Chat history saving removed (no authentication)
+                pass
             st.rerun()
 
         except Exception as e:

@@ -6,7 +6,7 @@ from io import BytesIO
 import time
 from langdetect import detect
 import re
-from auth import initialize_firebase, render_login_signup  # Import auth functions
+
 
 # ----------------- Session State Init -----------------
 def init_session_state():
@@ -52,7 +52,7 @@ def apply_custom_css():
             background: linear-gradient(135deg, rgba(0,100,0,0.5), rgba(0,0,0,0.3));
             z-index: -1;
         }
-        h1, h2, h3, h4, p, li, span, div, label {
+
             color: #1B5E20 !important;
             text-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
@@ -179,11 +179,7 @@ def translate_back(text, target_lang):
 
 # ----------------- Login Check -----------------
 def check_login():
-    initialize_firebase()
-    if "user" not in st.session_state:
-        st.markdown("<style>[data-testid='stSidebar'] {display: none;}</style>", unsafe_allow_html=True)
-        render_login_signup()
-        st.stop()
+    pass
 
 # ----------------- Sidebar with Logout -----------------
 def render_sidebar():
@@ -198,22 +194,9 @@ def render_sidebar():
         st.markdown(f"**{t('Provider', lang)}:** `GROQ`")
         
         if st.button(t("Clear Chat History", lang)):
-            user_id = st.session_state.user_id
-            user_token = st.session_state.user['idToken']
-            db = st.session_state.db
             st.session_state.messages = []
             st.session_state.audio_bytes_for_message = {}
-            try:
-                db.child("user_chats").child(user_id).set([], token=user_token)
-            except Exception as e:
-                st.error(f"Error clearing history: {e}")
             st.rerun()
             
         st.markdown("---")
-        st.write(f"{t('Logged in as', lang)}: **{st.session_state.user_email}**")
-        if st.button(t("Logout", lang)):
-            keys_to_delete = list(st.session_state.keys())
-            for key in keys_to_delete:
-                if key not in ['firebase_initialized', 'auth', 'db']:
-                    del st.session_state[key]
-            st.rerun()
+        st.info("Welcome to Agri-Bot! No login required.")

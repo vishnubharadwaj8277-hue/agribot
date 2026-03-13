@@ -27,26 +27,16 @@ render_sidebar()
 
 lang = st.session_state.lang
 
-# --- Get Firebase and User info ---
-db = st.session_state.db
-auth = st.session_state.auth
-user_id = st.session_state.user_id
-user_token = st.session_state.user['idToken']
 
 load_dotenv()
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 
+
 # ----------------- Load/Save User Data -----------------
 def load_user_data():
-    """Loads soil/location data from Firebase for the current user."""
-    try:
-        data = db.child("user_data").child(user_id).get(token=user_token).val()
-        if data:
-            return data
-    except Exception as e:
-        print(f"Error loading data (may be new user): {e}")
+    """Loads soil/location data from local session for the current user."""
     # Return defaults if no data
     return {
         "location": {"state": "Select State", "district": "Select a state first", "month": datetime.now().strftime("%B")},
@@ -54,16 +44,8 @@ def load_user_data():
     }
 
 def save_user_data(data_to_save):
-    """Saves soil/location data to Firebase for the current user."""
-    try:
-        db.child("user_data").child(user_id).set(data_to_save, token=user_token)
-    except Exception as e:
-        try:
-            st.session_state.user = auth.refresh(st.session_state.user['refreshToken'])
-            user_token = st.session_state.user['idToken'] 
-            db.child("user_data").child(user_id).set(data_to_save, token=user_token) 
-        except Exception as refresh_e:
-            st.error(f"Error saving data. Your session may have expired. Please log out and log back in. {refresh_e}")
+    """Saves soil/location data to local session for the current user."""
+    st.session_state.user_data = data_to_save
 
 # ----------------- Load initial data -----------------
 if "user_data" not in st.session_state:
@@ -361,7 +343,12 @@ with tab1:
                 with st.spinner(t(f"Fetching guide for {st.session_state.selected_crop}...", lang)):
                     guide = get_crop_guide( st.session_state.selected_crop, loc["state"], loc["district"], loc["month"], lang )
                 
-                st.markdown(f"""<div class='info-box'>{guide.replace('•', '<br>•')}</div>""", unsafe_allow_html=True)
+                st.markdown("""
+<style>
+.info-box { color: #1B1B1B !important; background: rgba(255,255,255,0.95) !important; }
+</style>
+""", unsafe_allow_html=True)
+                st.markdown(f"<div class='info-box'>{guide.replace('•', '<br>•')}</div>", unsafe_allow_html=True)
                 
                 if lang == "Kannada": 
                     audio_bytes = get_kannada_audio_bytes(guide[:500])

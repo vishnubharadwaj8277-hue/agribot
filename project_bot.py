@@ -31,9 +31,7 @@ Here is a summary of the app's features:
 
 2.  **Crop Recommender:** Recommends the Top 3 crops based on user's State, District, and soil data (N, P, K, pH). It also provides a full growing guide for any selected crop and includes a static Crop Map of India.
 
-3.  **Disease Detector:** Identifies 3 paddy (rice) diseases (Leaf Blast, Sheath Blight, Brown Spot) and 'Healthy Plant' from an uploaded image. It uses an InceptionV3 model and gives a severity score from 1-9, along with cure steps.
-
-4.  **Policy Portal:** Lists real Karnataka Government agricultural policies (like PM KISAN, Organic Farming Policy). Users can click "Show Details" to read a summary in a scrollable box and click a button to read the official PDF.
+3.  **Policy Portal:** Lists real Karnataka Government agricultural policies (like PM KISAN, Organic Farming Policy). Users can click "Show Details" to read a summary in a scrollable box and click a button to read the official PDF.
 """
 
 # -----------------
