@@ -125,11 +125,15 @@ def render_project_bot():
     # 3. Create the floating button
     st.button("💬", key="open-chat-modal")
 
-    # 4. Initialize chat history
+    # 4. Initialize chat history and processing flags
     if "project_bot_messages" not in st.session_state:
         st.session_state.project_bot_messages = [
             {"role": "assistant", "content": "Hi! How can I help you understand this app?"}
         ]
+    
+    # Flag to track if we're currently waiting for a response
+    if "project_bot_awaiting_response" not in st.session_state:
+        st.session_state.project_bot_awaiting_response = False
 
     # 5. Open the modal if the button is clicked
     if st.session_state.get("open-chat-modal"):
@@ -143,16 +147,15 @@ def render_project_bot():
             chat_box = st.container(height=350, border=False)
             with chat_box:
                 for msg in st.session_state.project_bot_messages:
-                    
-                    # --- (THIS IS THE FIX) ---
-                    # Use emojis for avatars, not file paths
                     avatar = "🌱" if msg["role"] == "assistant" else "🧑‍🌾" 
-                    # --- (END OF FIX) ---
-                    
                     with st.chat_message(msg["role"], avatar=avatar):
                         st.markdown(msg["content"])
             
-            # 6b. Use a form for the input *inside the modal*
+            # 6b. Check if waiting for response - show spinner without rerun
+            if st.session_state.project_bot_awaiting_response:
+                st.info("⏳ Getting response...")
+            
+            # 6c. Use a form for the input *inside the modal*
             with st.form(key="bot_chat_form", clear_on_submit=True):
                 user_text = st.text_input(
                     "Your message:", 
@@ -160,15 +163,19 @@ def render_project_bot():
                     label_visibility="collapsed",
                     key="bot_chat_input"
                 )
-                submitted = st.form_submit_button("Send")
+                submitted = st.form_submit_button("Send", disabled=st.session_state.project_bot_awaiting_response)
             
-            if submitted and user_text:
+            if submitted and user_text and not st.session_state.project_bot_awaiting_response:
                 st.session_state.project_bot_messages.append({"role": "user", "content": user_text})
+                st.session_state.project_bot_awaiting_response = True
                 st.rerun()
 
-            # 6c. Check if the last message was from the user, then get a response
-            if st.session_state.project_bot_messages[-1]["role"] == "user":
-                with st.spinner("Thinking..."):
-                    response = call_project_bot_api(st.session_state.project_bot_messages)
-                    st.session_state.project_bot_messages.append({"role": "assistant", "content": response})
-                    st.rerun()
+            # 6d. Process API response ONLY if awaiting and last message is from user
+            if (st.session_state.project_bot_awaiting_response and 
+                len(st.session_state.project_bot_messages) > 0 and
+                st.session_state.project_bot_messages[-1]["role"] == "user"):
+                
+                response = call_project_bot_api(st.session_state.project_bot_messages)
+                st.session_state.project_bot_messages.append({"role": "assistant", "content": response})
+                st.session_state.project_bot_awaiting_response = False
+                st.rerun()
