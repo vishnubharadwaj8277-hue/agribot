@@ -17,16 +17,6 @@ import pandas as pd
 from utils import apply_custom_css, t, language_toggle, get_kannada_audio_bytes
 from project_bot import render_project_bot # (NEW) Import floating bot
 
-# --- Add Kannada Font Support ---
-st.markdown("""
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@400;600;700&display=swap" rel="stylesheet">
-<style>
-    body, * {
-        font-family: 'Noto Sans Kannada', 'Arial Unicode MS', Arial, sans-serif !important;
-    }
-</style>
-""", unsafe_allow_html=True)
-
 # --- Apply CSS and Language Toggle ---
 apply_custom_css()
 with st.sidebar:
@@ -179,24 +169,22 @@ with tab1:
          if selected_state_rec == "Select State" or selected_district in ["Select District", t("Select a state first", lang)] or selected_month == "Select Month": st.error(t("Please select a valid State, District, and Month.", lang))
          else: st.session_state.location = {"state": selected_state_rec.upper(), "district": selected_district.upper(), "month": selected_month.upper()}; st.success(t("Location saved!", lang) + f" ({selected_state_rec}, {selected_district})")
     st.markdown(f"### {t('Soil & Weather Data', lang)}")
-    with st.form(key="crop_form"):
-        col1, col2, col3 = st.columns(3); col4, col5, col6 = st.columns(3)
-        with col1: n = st.number_input(t("Nitrogen (N)", lang), 0.0, value=50.0, step=1.0)
-        with col2: p = st.number_input(t("Phosphorus (P)", lang), 0.0, value=25.0, step=1.0)
-        with col3: k = st.number_input(t("Potassium (K)", lang), 0.0, value=25.0, step=1.0)
-        with col4: ph = st.number_input(t("pH", lang), 0.0, 14.0, value=6.5, step=0.1)
-        with col5: temp_in = st.number_input(t("Temperature (°C)", lang), 0.0, value=float(temp), step=0.5)
-        with col6: hum_in = st.number_input(t("Humidity (%)", lang), 0.0, value=float(hum), step=1.0)
-        rainfall = st.number_input(t("Rainfall (mm)", lang), 0.0, value=100.0, step=10.0)
-        submitted = st.form_submit_button(t("Get Crop Recommendations", lang), type="primary")
-        if submitted:
-            if not st.session_state.location["state"]: st.error(t("Please save a location first.", lang))
-            else:
-                crops, audio_text = get_crop_recommendations( n, p, k, ph, temp_in, hum_in, rainfall, st.session_state.location["state"], st.session_state.location["district"], st.session_state.location["month"], lang )
-                st.session_state.crops = crops
-                if lang == "Kannada" and audio_text: 
-                    audio_bytes = get_kannada_audio_bytes(audio_text)
-                    if audio_bytes: st.audio(audio_bytes, autoplay=True, format="audio/mp3")
+    col1, col2, col3 = st.columns(3); col4, col5, col6 = st.columns(3)
+    with col1: n = st.number_input(t("Nitrogen (N)", lang), 0.0, value=50.0, step=1.0)
+    with col2: p = st.number_input(t("Phosphorus (P)", lang), 0.0, value=25.0, step=1.0)
+    with col3: k = st.number_input(t("Potassium (K)", lang), 0.0, value=25.0, step=1.0)
+    with col4: ph = st.number_input(t("pH", lang), 0.0, 14.0, value=6.5, step=0.1)
+    with col5: temp_in = st.number_input(t("Temperature (°C)", lang), 0.0, value=float(temp), step=0.5)
+    with col6: hum_in = st.number_input(t("Humidity (%)", lang), 0.0, value=float(hum), step=1.0)
+    rainfall = st.number_input(t("Rainfall (mm)", lang), 0.0, value=100.0, step=10.0)
+    if st.button(t("Get Crop Recommendations", lang), type="primary"):
+        if not st.session_state.location["state"]: st.error(t("Please save a location first.", lang))
+        else:
+            crops, audio_text = get_crop_recommendations( n, p, k, ph, temp_in, hum_in, rainfall, st.session_state.location["state"], st.session_state.location["district"], st.session_state.location["month"], lang )
+            st.session_state.crops = crops
+            if lang == "Kannada" and audio_text: 
+                audio_bytes = get_kannada_audio_bytes(audio_text)
+                if audio_bytes: st.audio(audio_bytes, autoplay=True, format="audio/mp3")
 
     if st.session_state.get("crops"):
         st.markdown(f"### {t('Top 3 Recommended Crops', lang)}")
@@ -217,9 +205,7 @@ with tab1:
         if st.session_state.get("selected_crop"):
             guide = get_crop_guide( st.session_state.selected_crop, st.session_state.location["state"], st.session_state.location["district"], st.session_state.location["month"], lang )
             st.markdown(f"### {t('Complete Guide for', lang)} **{st.session_state.selected_crop}**")
-            # Better styling for both English and Kannada text
-            font_style = "font-family:'Noto Sans Kannada', 'Arial Unicode MS', Arial, sans-serif;" if lang == "Kannada" else ""
-            st.markdown(f"""<div style='background:rgba(255,255,255,0.95); padding:25px; border-radius:15px; color:#1B5E20; line-height:2; {font_style} font-size:16px;'>{guide.replace('•', '<br>•')}</div>""", unsafe_allow_html=True)
+            st.markdown(f"""<div style='background:rgba(255,255,255,0.95); padding:25px; border-radius:15px; color:#1B5E20; line-height:2;'>{guide.replace('•', '<br>•')}</div>""", unsafe_allow_html=True)
             if lang == "Kannada": 
                 audio_bytes = get_kannada_audio_bytes(guide[:500]) # Limit guide to 500 chars for audio
                 if audio_bytes: st.audio(audio_bytes, autoplay=True, format="audio/mp3")
