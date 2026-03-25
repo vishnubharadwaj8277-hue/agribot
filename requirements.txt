@@ -13,3 +13,7 @@ pillow>=10.0.0
 streamlit-modal
 streamlit-float
 Pyrebase4
+joblib
+scikit-learn
+pandas
+numpy
